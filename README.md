@@ -2,6 +2,8 @@
 
 A context graph tool for application architecture. Visualize pages, APIs, database tables, and services as interactive graphs -- with rich context (requirements, decisions, notes) on every node. Built for team collaboration with deep Cursor AI integration by Hashif Habeeb.
 
+
+
 ## How It Works
 
 **You just talk to Cursor.** The AI handles everything behind the scenes.
