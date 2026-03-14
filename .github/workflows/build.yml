@@ -1,0 +1,153 @@
+name: Build Architect IDE
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: win
+            sidecar_name: architect.exe
+            sidecar_dest: architect-sidecar.exe
+
+          - os: macos-latest
+            platform: mac
+            sidecar_name: architect
+            sidecar_dest: architect-sidecar
+
+          - os: ubuntu-latest
+            platform: linux
+            sidecar_name: architect
+            sidecar_dest: architect-sidecar
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # --- Python sidecar build ---
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install pyinstaller>=6.0
+
+      - name: Build Python sidecar
+        run: python -m PyInstaller --clean architect.spec
+
+      - name: Copy sidecar to Electron resources
+        shell: bash
+        run: |
+          mkdir -p electron-app/resources
+          cp "dist/${{ matrix.sidecar_name }}" "electron-app/resources/${{ matrix.sidecar_dest }}"
+          ls -lh electron-app/resources/
+
+      # --- Electron build ---
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: electron-app/package-lock.json
+
+      - name: Install Electron dependencies
+        working-directory: electron-app
+        run: npm install
+
+      - name: Build Electron app
+        working-directory: electron-app
+        run: npm run dist:${{ matrix.platform }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: List output
+        shell: bash
+        run: ls -lhR dist-installers/ || true
+
+      - name: Upload installer artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer-${{ matrix.platform }}
+          path: |
+            dist-installers/*.exe
+            dist-installers/*.dmg
+            dist-installers/*.AppImage
+            dist-installers/*.deb
+            dist-installers/*.zip
+          retention-days: 30
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/
+          merge-multiple: true
+
+      - name: Display downloaded files
+        run: ls -lhR dist/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Architect IDE ${{ github.ref_name }}"
+          body: |
+            ## Architect IDE ${{ github.ref_name }}
+
+            Standalone IDE for architecture visualization, powered by Cursor AI.
+
+            ### Downloads
+
+            | Platform | File | Notes |
+            |----------|------|-------|
+            | Windows  | `Architect-Setup-*.exe` | NSIS installer with Cursor detection |
+            | macOS    | `Architect-*.dmg` | Drag to Applications |
+            | Linux    | `Architect-*.AppImage` | Universal binary, chmod +x to run |
+            | Linux    | `Architect-*.deb` | Debian/Ubuntu package |
+
+            ### Requirements
+
+            - **Cursor** (recommended): Install from [cursor.com](https://cursor.com) for AI-powered features
+            - No other dependencies required — Python backend is bundled
+
+            ### First Launch
+
+            1. Install Architect using the appropriate installer for your platform
+            2. Open a project folder
+            3. The architecture graph, code editor, terminal, and AI chat are all built in
+            4. Press `Ctrl+G` to view the architecture graph
+            5. Press `Ctrl+Shift+C` to open the AI chat (requires Cursor)
+          files: |
+            dist/**/*.exe
+            dist/**/*.dmg
+            dist/**/*.AppImage
+            dist/**/*.deb
+          draft: false
+          prerelease: false
+          generate_release_notes: true

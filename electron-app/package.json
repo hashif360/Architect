@@ -1,0 +1,42 @@
+{
+  "name": "architect-ide",
+  "version": "0.1.0",
+  "description": "Architect — Standalone IDE for architecture visualization, powered by Cursor AI",
+  "main": "dist-electron/main/index.js",
+  "author": "Architect Team",
+  "license": "MIT",
+  "scripts": {
+    "dev": "concurrently \"npm run watch:main\" \"npm run watch:preload\" \"npm run watch:renderer\" \"wait-on dist-electron/main/index.js && electron .\"",
+    "watch:main": "tsc -p tsconfig.main.json --watch",
+    "watch:preload": "tsc -p tsconfig.preload.json --watch",
+    "watch:renderer": "esbuild renderer/app.ts --bundle --outfile=dist-renderer/app.js --sourcemap --watch --loader:.ttf=file --loader:.css=css --format=esm",
+    "build:main": "tsc -p tsconfig.main.json",
+    "build:preload": "tsc -p tsconfig.preload.json",
+    "build:renderer": "esbuild renderer/app.ts --bundle --outfile=dist-renderer/app.js --minify --loader:.ttf=file --loader:.css=css --format=esm",
+    "build": "npm run build:main && npm run build:preload && npm run build:renderer",
+    "pack": "npm run build && electron-builder --dir",
+    "dist": "npm run build && electron-builder",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:linux": "npm run build && electron-builder --linux",
+    "postinstall": "echo Postinstall complete"
+  },
+  "dependencies": {
+    "chokidar": "^4.0.0"
+  },
+  "devDependencies": {
+    "@xterm/addon-fit": "^0.10.0",
+    "@xterm/xterm": "^5.5.0",
+    "concurrently": "^9.0.0",
+    "cytoscape": "^3.30.0",
+    "cytoscape-cose-bilkent": "^4.1.0",
+    "cytoscape-dagre": "^2.5.0",
+    "dagre": "^0.8.5",
+    "electron": "^34.0.0",
+    "electron-builder": "^25.0.0",
+    "esbuild": "^0.24.0",
+    "monaco-editor": "^0.52.0",
+    "typescript": "^5.7.0",
+    "wait-on": "^8.0.0"
+  }
+}

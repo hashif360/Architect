@@ -1,0 +1,88 @@
+appId: com.architect.ide
+productName: Architect
+copyright: Copyright © 2026 Architect Team
+
+directories:
+  output: ../dist-installers
+  buildResources: ../installer/assets
+
+files:
+  - dist-electron/**/*
+  - dist-renderer/**/*
+  - renderer/index.html
+  - "!node_modules/**/*.{md,ts,map}"
+
+extraResources:
+  - from: ../dist/architect-sidecar${ext}
+    to: sidecar/architect${ext}
+    filter:
+      - "**/*"
+
+asar: true
+compression: maximum
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: ../installer/assets/icon.ico
+  artifactName: Architect-Setup-${version}.${ext}
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  license: ../installer/assets/license.txt
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
+  shortcutName: Architect
+
+mac:
+  target:
+    - target: dmg
+      arch: [x64, arm64]
+  icon: ../installer/assets/icon.icns
+  category: public.app-category.developer-tools
+  artifactName: Architect-${version}-${arch}.${ext}
+
+dmg:
+  title: Architect
+  iconSize: 128
+  contents:
+    - x: 380
+      y: 170
+      type: link
+      path: /Applications
+    - x: 130
+      y: 170
+      type: file
+
+linux:
+  target:
+    - target: AppImage
+      arch: [x64]
+    - target: deb
+      arch: [x64]
+  icon: ../installer/assets
+  category: Development
+  artifactName: Architect-${version}-${arch}.${ext}
+  desktop:
+    Name: Architect
+    Comment: Architecture visualization IDE
+    Categories: Development;IDE
+    StartupWMClass: architect
+
+deb:
+  depends:
+    - libgtk-3-0
+    - libnotify4
+    - libnss3
+    - libxss1
+    - libxtst6
+    - xdg-utils
+  afterInstall: ../installer/linux-post-install.sh
+
+fileAssociations:
+  - ext: architect
+    name: Architect Project
+    description: Architect project file
+    role: Editor

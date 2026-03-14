@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.venv/
+venv/
+env/
+pip-wheel-metadata/
+
+# PyInstaller
+*.spec.bak
+build/
+dist/
+*.manifest
+
+# Project self-scan artifacts (only commit .architect/ in real projects)
+.architect/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Electron
+electron/
+electron-app/node_modules/
+electron-app/dist-electron/
+electron-app/dist-renderer/
+electron-app/resources/
+dist-installers/
+
+# Large files
+*.zip
+
+# OS
+.DS_Store
+Thumbs.db

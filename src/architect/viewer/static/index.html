@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Architect - Graph Viewer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="https://unpkg.com/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
+  <script src="https://unpkg.com/cytoscape@3.30.4/dist/cytoscape.min.js"></script>
+  <script src="https://unpkg.com/layout-base@1.0.0/layout-base.js"></script>
+  <script src="https://unpkg.com/cose-base@1.0.3/cose-base.js"></script>
+  <script src="https://unpkg.com/cytoscape-cose-bilkent@4.1.0/cytoscape-cose-bilkent.js"></script>
+  <script src="https://unpkg.com/dagre@0.8.5/dist/dagre.min.js"></script>
+  <script src="https://unpkg.com/cytoscape-dagre@2.5.0/cytoscape-dagre.js"></script>
+  <script>window.Prism = window.Prism || {}; Prism.manual = true;</script>
+  <script src="https://unpkg.com/prismjs@1.29.0/prism.min.js"></script>
+  <script src="https://unpkg.com/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+  <script src="https://unpkg.com/prismjs@1.29.0/components/prism-python.min.js"></script>
+  <script src="https://unpkg.com/prismjs@1.29.0/components/prism-typescript.min.js"></script>
+  <script src="https://unpkg.com/prismjs@1.29.0/components/prism-jsx.min.js"></script>
+  <script src="https://unpkg.com/prismjs@1.29.0/components/prism-tsx.min.js"></script>
+  <script src="https://unpkg.com/prismjs@1.29.0/components/prism-json.min.js"></script>
+  <script src="https://unpkg.com/prismjs@1.29.0/components/prism-bash.min.js"></script>
+  <script src="https://unpkg.com/prismjs@1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://unpkg.com/prismjs@1.29.0/components/prism-yaml.min.js"></script>
+  <script src="https://unpkg.com/prismjs@1.29.0/components/prism-toml.min.js"></script>
+  <script src="https://unpkg.com/prismjs@1.29.0/components/prism-scss.min.js"></script>
+  <script src="https://unpkg.com/prismjs@1.29.0/components/prism-graphql.min.js"></script>
+  <script src="https://unpkg.com/prismjs@1.29.0/components/prism-go.min.js"></script>
+  <script src="https://unpkg.com/prismjs@1.29.0/components/prism-rust.min.js"></script>
+  <script src="https://unpkg.com/prismjs@1.29.0/components/prism-java.min.js"></script>
+  <script src="https://unpkg.com/prismjs@1.29.0/components/prism-c.min.js"></script>
+  <script src="https://unpkg.com/prismjs@1.29.0/components/prism-cpp.min.js"></script>
+  <script src="https://unpkg.com/prismjs@1.29.0/components/prism-docker.min.js"></script>
+  <script src="https://unpkg.com/prismjs@1.29.0/components/prism-markdown.min.js"></script>
+  <script src="https://unpkg.com/prismjs@1.29.0/components/prism-ruby.min.js"></script>
+  <script src="https://unpkg.com/prismjs@1.29.0/components/prism-php.min.js"></script>
+  <script src="https://unpkg.com/prismjs@1.29.0/components/prism-ini.min.js"></script>
+  <script src="https://unpkg.com/prismjs@1.29.0/components/prism-powershell.min.js"></script>
+  <script src="https://unpkg.com/marked@15.0.7/marked.min.js"></script>
+</head>
+<body>
+  <div class="loading-bar" id="loading-bar"></div>
+
+  <div id="app">
+    <div id="toolbar">
+      <h1>Architect</h1>
+      <div class="separator"></div>
+      <div class="toolbar-collapsible" id="toolbar-collapsible">
+        <div class="toolbar-group">
+          <label>Layers:</label>
+          <span class="chip active" data-layer="frontend">Frontend</span>
+          <span class="chip active" data-layer="backend">Backend</span>
+          <span class="chip active" data-layer="database">Database</span>
+          <span class="chip active" data-layer="shared">Shared</span>
+        </div>
+        <div class="separator"></div>
+      </div>
+      <div class="search-wrapper">
+        <input id="search-input" type="text" placeholder="Search nodes... ( / )">
+        <button class="search-clear" id="search-clear" title="Clear search">&times;</button>
+      </div>
+      <span class="search-count" id="search-count"></span>
+      <div class="separator"></div>
+      <button class="btn-toolbar-more" id="btn-toolbar-more" title="More options">&hellip;</button>
+      <div class="toolbar-collapsible" id="toolbar-collapsible-2">
+        <div class="toolbar-group">
+          <label>Layout:</label>
+          <select id="layout-select">
+            <option value="cose-bilkent">Force</option>
+            <option value="breadthfirst">Hierarchical</option>
+            <option value="circle">Radial</option>
+            <option value="grid">Grid</option>
+            <option value="preset">Preset</option>
+          </select>
+        </div>
+        <div class="separator"></div>
+        <div class="toolbar-group">
+          <label>Filters:</label>
+          <select id="type-filter">
+            <option value="">All Types</option>
+            <option value="page">Page</option>
+            <option value="component">Component</option>
+            <option value="api_endpoint">API</option>
+            <option value="service">Service</option>
+            <option value="db_table">DB Table</option>
+            <option value="middleware">Middleware</option>
+            <option value="utility">Utility</option>
+            <option value="config">Config</option>
+            <option value="custom">Custom</option>
+          </select>
+          <select id="status-filter">
+            <option value="">All Status</option>
+            <option value="planned">Planned</option>
+            <option value="in_progress">In Progress</option>
+            <option value="implemented">Implemented</option>
+            <option value="needs_review">Needs Review</option>
+            <option value="deprecated">Deprecated</option>
+          </select>
+        </div>
+        <div class="separator"></div>
+      </div>
+      <button class="btn btn-primary" id="btn-add-node">+ Node</button>
+      <button class="btn btn-link-mode" id="btn-link-mode" title="Link two nodes (L)">Link</button>
+      <button class="btn btn-secondary" id="btn-fit" title="Fit graph (F)">Fit</button>
+      <button class="btn btn-secondary" id="btn-export" title="Export graph (E)">Export</button>
+      <button class="btn btn-git" id="btn-git-status" title="Toggle git dirty overlay (G)">Git Status</button>
+      <button class="btn btn-git-changed" id="btn-git-changed" title="Show only git-changed files and connections (C)">Changed Only</button>
+      <button class="btn btn-live" id="btn-live-tracking" title="Toggle live file tracking (W)">Live</button>
+      <button class="btn btn-tree" id="btn-tree-view" title="Hierarchical tree view (H)">Tree View</button>
+      <button class="btn btn-folder" id="btn-folder-view" title="Group nodes by folder (D)">Folder View</button>
+      <button class="btn btn-focus" id="btn-focus" title="Focus selected nodes (Shift+F)" disabled>Focus</button>
+      <button class="btn btn-secondary" id="btn-help" title="Keyboard shortcuts (?)" style="padding:6px 10px;">?</button>
+      <span class="toolbar-stats" id="stats"></span>
+    </div>
+
+    <div id="sidebar">
+      <button id="sidebar-toggle" title="Toggle sidebar (S)">
+        <svg class="toggle-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3l5 5-5 5"/></svg>
+      </button>
+      <div class="sidebar-inner">
+        <div class="sidebar-tabs">
+          <button class="sidebar-tab active" data-stab="nodes">Nodes</button>
+          <button class="sidebar-tab" data-stab="adrs">ADRs</button>
+          <button class="sidebar-tab" data-stab="chat">Chat</button>
+        </div>
+        <div class="sidebar-filter" id="sidebar-filter-box">
+          <input type="text" id="sidebar-filter-input" placeholder="Filter nodes...">
+        </div>
+        <div id="sidebar-nodes" class="sidebar-content">
+          <div id="node-list"></div>
+        </div>
+        <div id="sidebar-adrs" class="sidebar-content" style="display:none;">
+          <div id="adr-list"></div>
+          <button class="btn btn-primary" id="btn-add-adr" style="margin:12px;padding:6px 14px;width:calc(100% - 24px);">+ ADR</button>
+        </div>
+        <div id="sidebar-chat" class="sidebar-content" style="display:none;">
+          <div id="chat-messages"></div>
+          <div id="chat-input-area">
+            <div id="chat-file-chips"></div>
+            <div id="chat-input-row">
+              <textarea id="chat-input" placeholder="Ask about this code... Use @ to reference files" rows="2" disabled></textarea>
+              <button id="chat-send" title="Send (Enter)">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              </button>
+              <button id="chat-stop" title="Stop generation" style="display:none;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+              </button>
+            </div>
+          </div>
+          <div id="chat-file-dropdown"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="cy">
+      <div class="empty-state hidden" id="empty-state">
+        <div class="empty-state-icon">
+          <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <circle cx="4" cy="6" r="2"/>
+            <circle cx="20" cy="6" r="2"/>
+            <circle cx="4" cy="18" r="2"/>
+            <circle cx="20" cy="18" r="2"/>
+            <line x1="6" y1="6" x2="9.5" y2="10"/>
+            <line x1="18" y1="6" x2="14.5" y2="10"/>
+            <line x1="6" y1="18" x2="9.5" y2="14"/>
+            <line x1="18" y1="18" x2="14.5" y2="14"/>
+          </svg>
+        </div>
+        <h2>No nodes yet</h2>
+        <p>Add your first node with the <strong>+ Node</strong> button, or run <code>architect scan</code> from the terminal to auto-discover your project structure.</p>
+        <button class="btn btn-primary" onclick="document.getElementById('add-node-modal').classList.remove('hidden')">+ Add First Node</button>
+      </div>
+    </div>
+
+    <div id="minimap">
+      <div class="minimap-viewport-rect" id="minimap-viewport-rect"></div>
+    </div>
+
+    <div class="zoom-controls" id="zoom-controls">
+      <button class="zoom-btn" id="zoom-in" title="Zoom in">+</button>
+      <button class="zoom-btn" id="zoom-out" title="Zoom out">&minus;</button>
+      <button class="zoom-btn" id="zoom-fit" title="Fit to view" style="font-size:12px;">&#8859;</button>
+    </div>
+
+    <div class="link-mode-banner" id="link-mode-banner">
+      <span id="link-mode-text">Click the source node...</span>
+      <button onclick="cancelLinkMode()">Cancel</button>
+    </div>
+
+    <div id="focus-badge" class="focus-badge hidden">
+      <span id="focus-badge-text">Focusing on 0 nodes</span>
+      <button onclick="clearFocus()">&times; Clear</button>
+    </div>
+
+    <div id="legend">
+      <div class="legend-title">Legend</div>
+      <div class="legend-row"><span class="legend-dot dot-page"></span><span>Page</span></div>
+      <div class="legend-row"><span class="legend-dot dot-component"></span><span>Component</span></div>
+      <div class="legend-row"><span class="legend-dot dot-api_endpoint legend-diamond"></span><span>API</span></div>
+      <div class="legend-row"><span class="legend-dot dot-service legend-hex"></span><span>Service</span></div>
+      <div class="legend-row"><span class="legend-dot dot-db_table"></span><span>DB Table</span></div>
+      <div class="legend-row"><span class="legend-dot dot-middleware legend-tri"></span><span>Middleware</span></div>
+      <div class="legend-row"><span class="legend-dot dot-utility"></span><span>Utility</span></div>
+      <div class="legend-divider"></div>
+      <div class="legend-title">Status</div>
+      <div class="legend-row"><span class="legend-dot legend-status-planned"></span><span>Planned</span></div>
+      <div class="legend-row"><span class="legend-dot legend-status-in_progress"></span><span>In Progress</span></div>
+      <div class="legend-row"><span class="legend-dot legend-status-implemented"></span><span>Implemented</span></div>
+      <div class="legend-row"><span class="legend-dot legend-status-needs_review"></span><span>Needs Review</span></div>
+      <div class="legend-row"><span class="legend-dot legend-status-deprecated"></span><span>Deprecated</span></div>
+      <div class="legend-git-section hidden" id="legend-git">
+        <div class="legend-divider"></div>
+        <div class="legend-row"><span class="legend-dot legend-dirty"></span><span>Uncommitted changes</span></div>
+        <div class="legend-row"><span class="legend-dot legend-impact-d1"></span><span>Affected (depth 1)</span></div>
+        <div class="legend-row"><span class="legend-dot legend-impact-d2"></span><span>Affected (depth 2)</span></div>
+        <div class="legend-row"><span class="legend-dot legend-impact-d3"></span><span>Affected (depth 3+)</span></div>
+      </div>
+      <div class="legend-changed-section hidden" id="legend-changed">
+        <div class="legend-divider"></div>
+        <div class="legend-title">Changed Only</div>
+        <div class="legend-row"><span class="legend-dot legend-dirty"></span><span>Changed file</span></div>
+        <div class="legend-row"><span class="legend-dot legend-neighbor"></span><span>Connected neighbor</span></div>
+      </div>
+      <div class="legend-live-section hidden" id="legend-live">
+        <div class="legend-divider"></div>
+        <div class="legend-row"><span class="legend-dot legend-touched"></span><span>Modified file</span></div>
+        <div class="legend-row"><span class="legend-dot legend-touch-d1"></span><span>Affected (depth 1)</span></div>
+        <div class="legend-row"><span class="legend-dot legend-touch-d2"></span><span>Affected (depth 2)</span></div>
+        <div class="legend-row"><span class="legend-dot legend-touch-d3"></span><span>Affected (depth 3+)</span></div>
+      </div>
+    </div>
+
+    <div id="detail-panel">
+      <div class="detail-header">
+        <div class="info">
+          <h3 id="detail-name"></h3>
+          <div class="detail-meta" id="detail-meta"></div>
+        </div>
+        <button class="close-btn" id="detail-close">&times;</button>
+      </div>
+      <div class="detail-tabs">
+        <button class="detail-tab active" data-tab="context">Context</button>
+        <button class="detail-tab" data-tab="code">Code</button>
+        <button class="detail-tab" data-tab="edit">Edit</button>
+        <button class="detail-tab" data-tab="metadata">Metadata</button>
+        <button class="detail-tab" data-tab="impact">Impact</button>
+      </div>
+      <div class="detail-body" id="detail-body"></div>
+      <div class="detail-actions" id="detail-actions"></div>
+    </div>
+
+    <div class="modal-overlay hidden" id="add-node-modal">
+      <div class="modal">
+        <h3>Add Node</h3>
+        <div class="form-group" id="fg-new-node-name">
+          <label>Name</label>
+          <input id="new-node-name" type="text" placeholder="e.g. Dashboard Page">
+        </div>
+        <div class="form-group">
+          <label>Type</label>
+          <select id="new-node-type">
+            <option value="page">Page</option>
+            <option value="component">Component</option>
+            <option value="api_endpoint">API Endpoint</option>
+            <option value="service">Service</option>
+            <option value="db_table">DB Table</option>
+            <option value="middleware">Middleware</option>
+            <option value="utility">Utility</option>
+            <option value="config">Config</option>
+            <option value="custom" selected>Custom</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Layer</label>
+          <select id="new-node-layer">
+            <option value="frontend">Frontend</option>
+            <option value="backend">Backend</option>
+            <option value="database">Database</option>
+            <option value="shared" selected>Shared</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Summary</label>
+          <input id="new-node-summary" type="text" placeholder="Brief description">
+        </div>
+        <div class="form-group">
+          <label>Tags (comma-separated)</label>
+          <input id="new-node-tags" type="text" placeholder="e.g. auth, critical, v2">
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" id="modal-cancel">Cancel</button>
+          <button class="btn btn-primary" id="modal-create">Create</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay hidden" id="export-modal">
+      <div class="modal">
+        <h3>Export Graph</h3>
+        <div class="form-group">
+          <label>Format</label>
+          <select id="export-format">
+            <option value="png">PNG Image</option>
+            <option value="svg">SVG Image</option>
+            <option value="mermaid">Mermaid Diagram</option>
+            <option value="plantuml">PlantUML Diagram</option>
+            <option value="json">JSON</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" id="export-cancel">Cancel</button>
+          <button class="btn btn-primary" id="export-confirm">Export</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay hidden" id="adr-modal">
+      <div class="modal" style="width:520px;">
+        <h3 id="adr-modal-title">Add ADR</h3>
+        <input type="hidden" id="adr-edit-id" value="">
+        <div class="form-group">
+          <label>Title</label>
+          <input id="adr-title" type="text" placeholder="e.g. Use PostgreSQL for persistence">
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="adr-status">
+            <option value="proposed">Proposed</option>
+            <option value="accepted">Accepted</option>
+            <option value="deprecated">Deprecated</option>
+            <option value="superseded">Superseded</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Context</label>
+          <textarea id="adr-context" rows="3" placeholder="Background and context..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Decision</label>
+          <textarea id="adr-decision" rows="3" placeholder="What was decided..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Consequences</label>
+          <textarea id="adr-consequences" rows="3" placeholder="What are the consequences..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Linked Node IDs (comma-separated)</label>
+          <input id="adr-linked" type="text" placeholder="e.g. abc123, def456">
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" id="adr-modal-cancel">Cancel</button>
+          <button class="btn btn-primary" id="adr-modal-save">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay hidden" id="edge-modal">
+      <div class="modal" style="width:400px;">
+        <h3>Create Edge</h3>
+        <div class="form-group">
+          <label>Label</label>
+          <input id="edge-label" type="text" placeholder="e.g. calls, renders, depends on">
+        </div>
+        <div class="form-group">
+          <label>Type</label>
+          <select id="edge-type">
+            <option value="dependency">Dependency</option>
+            <option value="data_flow">Data Flow</option>
+            <option value="foreign_key">Foreign Key</option>
+            <option value="renders">Renders</option>
+            <option value="calls">Calls</option>
+            <option value="inherits">Inherits</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" id="edge-modal-cancel">Cancel</button>
+          <button class="btn btn-primary" id="edge-modal-create">Create Edge</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="keyboard-help" class="modal-overlay hidden">
+      <div class="modal" style="width:420px;">
+        <h3>Keyboard Shortcuts</h3>
+        <div class="shortcut-list">
+          <div class="shortcut-row"><kbd>/</kbd><span>Focus search</span></div>
+          <div class="shortcut-row"><kbd>Esc</kbd><span>Close panel / deselect</span></div>
+          <div class="shortcut-row"><kbd>F</kbd><span>Fit graph to viewport</span></div>
+          <div class="shortcut-row"><kbd>N</kbd><span>Add new node</span></div>
+          <div class="shortcut-row"><kbd>L</kbd><span>Link mode (create edge)</span></div>
+          <div class="shortcut-row"><kbd>E</kbd><span>Export graph</span></div>
+          <div class="shortcut-row"><kbd>G</kbd><span>Toggle git status overlay</span></div>
+          <div class="shortcut-row"><kbd>C</kbd><span>Toggle changed-only view</span></div>
+          <div class="shortcut-row"><kbd>W</kbd><span>Toggle live file tracking</span></div>
+          <div class="shortcut-row"><kbd>H</kbd><span>Hierarchical tree view</span></div>
+          <div class="shortcut-row"><kbd>D</kbd><span>Toggle folder view</span></div>
+          <div class="shortcut-row"><kbd>Ctrl+Click</kbd><span>Multi-select nodes for focus</span></div>
+          <div class="shortcut-row"><kbd>Shift+F</kbd><span>Focus selected nodes</span></div>
+          <div class="shortcut-row"><kbd>S</kbd><span>Toggle sidebar</span></div>
+          <div class="shortcut-row"><kbd>1-4</kbd><span>Switch layout</span></div>
+          <div class="shortcut-row"><kbd>?</kbd><span>Toggle this help</span></div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" id="help-close">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="node-tooltip" class="hidden"></div>
+
+  <div class="context-menu hidden" id="context-menu">
+    <button class="context-menu-item" data-action="view-details">View Details</button>
+    <button class="context-menu-item" data-action="edit-metadata">Edit Metadata</button>
+    <button class="context-menu-item" data-action="impact">Impact Analysis</button>
+    <div class="context-menu-divider"></div>
+    <button class="context-menu-item" data-action="link-from">Link From Here</button>
+    <button class="context-menu-item" data-action="link-to">Link To Here</button>
+    <div class="context-menu-divider"></div>
+    <button class="context-menu-item danger" data-action="delete">Delete Node</button>
+  </div>
+
+  <div class="context-menu hidden" id="edge-context-menu">
+    <button class="edge-context-menu-item" data-action="edit-edge">Edit Edge</button>
+    <div class="context-menu-divider"></div>
+    <button class="edge-context-menu-item" data-action="reroute-source">Reroute Source</button>
+    <button class="edge-context-menu-item" data-action="reroute-target">Reroute Target</button>
+    <div class="context-menu-divider"></div>
+    <button class="edge-context-menu-item danger" data-action="delete-edge">Delete Edge</button>
+    <button class="edge-context-menu-item" data-action="restore-edge" style="color:var(--green)">Restore Edge</button>
+    <button class="edge-context-menu-item danger" data-action="permanent-delete-edge">Permanently Delete</button>
+  </div>
+
+  <div class="context-menu hidden" id="canvas-context-menu">
+    <button class="canvas-context-menu-item" data-action="add-node-here">Add Node Here</button>
+  </div>
+
+  <div class="modal-overlay hidden" id="edit-edge-modal">
+    <div class="modal" style="width:400px;">
+      <h3>Edit Edge</h3>
+      <div class="form-group">
+        <label>Label</label>
+        <input id="edit-edge-label" type="text" placeholder="e.g. calls, renders, depends on">
+      </div>
+      <div class="form-group">
+        <label>Type</label>
+        <select id="edit-edge-type">
+          <option value="dependency">Dependency</option>
+          <option value="data_flow">Data Flow</option>
+          <option value="foreign_key">Foreign Key</option>
+          <option value="renders">Renders</option>
+          <option value="calls">Calls</option>
+          <option value="inherits">Inherits</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="edit-edge-modal-cancel">Cancel</button>
+        <button class="btn btn-primary" id="edit-edge-modal-save">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="code-fullscreen-modal">
+    <div class="modal code-fullscreen">
+      <div class="code-fullscreen-header">
+        <span class="code-filepath" id="code-fullscreen-filepath"></span>
+        <div class="code-fullscreen-actions">
+          <span class="code-lang" id="code-fullscreen-lang"></span>
+          <button class="btn btn-secondary btn-sm" id="code-fullscreen-edit" title="Edit file">Edit</button>
+          <button class="close-btn" id="code-fullscreen-close">&times;</button>
+        </div>
+      </div>
+      <div class="code-fullscreen-body" id="code-fullscreen-body"></div>
+      <div class="code-fullscreen-footer hidden" id="code-fullscreen-footer">
+        <button class="btn btn-secondary" id="code-fullscreen-cancel">Cancel</button>
+        <button class="btn btn-primary" id="code-fullscreen-save">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
