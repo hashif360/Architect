@@ -23,46 +23,17 @@ You never need to remember a single command. Cursor reads the architecture rule 
 
 ## Installation
 
-### Option A -- Standalone executable (no Python required)
+### Option A Build your own executable
 
-Download the pre-built binary for your platform from the [GitHub Releases](../../releases/latest) page:
+If you want to build the binary yourself (e.g. on an unsupported platform):
 
-| Platform | File to download |
-|----------|-----------------|
-| Windows  | `architect-windows.exe` |
-| macOS    | `architect-macos` |
-| Linux    | `architect-linux` |
-
-**Windows** -- download `architect-windows.exe`, then either:
-```powershell
-# Run from where you downloaded it
-.\architect-windows.exe --help
-
-# Or add it to PATH permanently (run as Administrator)
-Move-Item .\architect-windows.exe C:\Windows\System32\architect.exe
-architect --help
-```
-
-**macOS / Linux** -- download the binary, then:
 ```bash
-chmod +x architect-macos        # or architect-linux
+git clone <this-repo>
+cd Architect
+pip install -e .
+python build.py
+# Output: dist/architect  (or dist/architect.exe on Windows)
 
-# Run directly
-./architect-macos --help
-
-# Or add to PATH for global access
-sudo mv architect-macos /usr/local/bin/architect
-architect --help
-```
-
-**After installing**, open any project in Cursor and run:
-```bash
-architect init --name "My Project" --description "Description here"
-```
-This creates `.architect/` and installs the Cursor rule automatically. You can also install just the Cursor rule without initializing:
-```bash
-architect install-rules
-```
 
 ### Option B -- From source (requires Python 3.10+)
 
@@ -73,17 +44,6 @@ pip install -e .
 python -m architect --help
 ```
 
-### Option C -- Build your own executable
-
-If you want to build the binary yourself (e.g. on an unsupported platform):
-
-```bash
-git clone <this-repo>
-cd Architect
-pip install -e .
-python build.py
-# Output: dist/architect  (or dist/architect.exe on Windows)
-```
 
 ## Quick Start (with Cursor)
 
